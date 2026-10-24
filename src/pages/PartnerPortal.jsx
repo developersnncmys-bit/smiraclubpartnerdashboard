@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Building2, BedDouble, Tags, CalendarDays, CalendarCheck, Users,
   Wallet, BarChart3, Star, FileText, Headphones, UserRound, LogOut, Check, X,
   Pencil, Loader2, RefreshCw, Clock3, Hourglass, FileSignature, XCircle, TrendingUp,
+  ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import Brand from '../components/ui/Brand.jsx';
 import ListingWizard from '../components/partners/ListingWizard.jsx';
@@ -12,6 +13,8 @@ import Badge from '../components/ui/Badge.jsx';
 import { inr, shortInr } from '../data/mockData.js';
 import { partnerApi, getPartnerToken, setPartnerToken } from '../lib/partnerApi.js';
 import Paged from '../components/ui/Pagination.jsx';
+import PortalTabBar from '../components/partners/PortalTabBar.jsx';
+import useStackLabels from '../lib/useStackLabels.js';
 
 /**
  * The partner portal — the only thing a partner can open.
@@ -56,9 +59,9 @@ const confirmationTone = (c = '') => {
 /** One figure in the overview row. */
 function Figure({ label, value, hint, tone = 'text-ink-900' }) {
   return (
-    <div className="card p-4">
+    <div className="card min-w-0 p-3 sm:p-4">
       <p className="text-[11px] font-bold uppercase tracking-wide text-ink-400">{label}</p>
-      <p className={`num mt-1.5 font-display text-2xl font-extrabold ${tone}`}>{value}</p>
+      <p className={`num mt-1 truncate font-display text-xl font-extrabold sm:mt-1.5 sm:text-2xl ${tone}`}>{value}</p>
       {hint && <p className="mt-0.5 text-xs text-ink-400">{hint}</p>}
     </div>
   );
@@ -67,7 +70,7 @@ function Figure({ label, value, hint, tone = 'text-ink-900' }) {
 /** A plain white panel with a title — every section is built from these. */
 function Panel({ title, note, children, action }) {
   return (
-    <section className="card p-5">
+    <section className="card p-4 sm:p-5">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="font-display text-base font-extrabold text-ink-900">{title}</h2>
@@ -128,7 +131,7 @@ function BookingCard({ b, busy, onAccept, onDecline }) {
         ))}
       </dl>
 
-      <div className="mt-4 flex flex-wrap gap-2 border-t border-ink-900/[0.07] pt-4">
+      <div className="mt-4 grid grid-cols-2 gap-2 border-t border-ink-900/[0.07] pt-4 sm:flex sm:flex-wrap [&>*]:justify-center">
         <button
           type="button"
           onClick={() => onAccept(b)}
@@ -166,6 +169,15 @@ export default function PartnerPortal() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [section, setSection] = useState('dashboard');
+  const [moreOpen, setMoreOpen] = useState(false);
+  const shell = useRef(null);
+  useStackLabels(shell);
+
+  /** Change section, and start it from the top, as an app does. */
+  const go = (key) => {
+    setSection(key);
+    window.scrollTo({ top: 0 });
+  };
   const [busy, setBusy] = useState({});
   const [note, setNote] = useState('');
 
@@ -348,7 +360,7 @@ export default function PartnerPortal() {
     dashboard: (
       <>
         {/* The partner's own switch, above everything: taking bookings, or not. */}
-        <section className="card flex flex-wrap items-center justify-between gap-4 p-5">
+        <section className="card flex items-center justify-between gap-4 p-4 sm:p-5">
           <div className="min-w-0">
             <p className="font-display text-base font-extrabold text-ink-900">
               {accepting ? 'Open for bookings' : 'Closed for bookings'}
@@ -380,7 +392,7 @@ export default function PartnerPortal() {
           </button>
         </section>
 
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4 xl:grid-cols-7">
           <Figure label="Total bookings" value={o.bookings ?? 0} />
           <Figure label="Upcoming check-ins" value={o.upcoming ?? 0} hint="next 7 days" />
           <Figure label="Today's check-ins" value={o.today ?? 0} />
@@ -438,7 +450,7 @@ export default function PartnerPortal() {
           <Paged items={data.inventory}>
             {(shown) => (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[520px] text-sm">
+                <table className="stack-mobile w-full min-w-[520px] text-sm">
                   <thead>
                     <tr className="border-b border-ink-900/[0.07] text-left">
                       {['Room or service', 'Total', 'Booked', 'Blocked', 'Available', 'Status'].map((h) => (
@@ -508,15 +520,19 @@ export default function PartnerPortal() {
           note="What you charge each day, and who is staying"
           action={
             <span className="flex items-center gap-2">
-              <button type="button" className="btn-line btn-sm" onClick={() => shiftMonth(-1)}>Previous</button>
-              <span className="min-w-[8.5rem] text-center text-sm font-bold text-ink-900">
+              <button type="button" className="btn-line btn-sm" onClick={() => shiftMonth(-1)} aria-label="Previous month">
+                <ChevronLeft size={14} /><span className="hidden sm:inline">Previous</span>
+              </button>
+              <span className="min-w-[7.5rem] text-center text-sm font-bold text-ink-900 sm:min-w-[8.5rem]">
                 {month.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}
               </span>
-              <button type="button" className="btn-line btn-sm" onClick={() => shiftMonth(1)}>Next</button>
+              <button type="button" className="btn-line btn-sm" onClick={() => shiftMonth(1)} aria-label="Next month">
+                <span className="hidden sm:inline">Next</span><ChevronRight size={14} />
+              </button>
             </span>
           }
         >
-          <div className="grid grid-cols-7 gap-1.5 text-center">
+          <div className="grid grid-cols-7 gap-1 text-center sm:gap-1.5">
             {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
               <span key={d} className="pb-1 text-[11px] font-bold uppercase tracking-wide text-ink-400">{d}</span>
             ))}
@@ -529,7 +545,7 @@ export default function PartnerPortal() {
                   key={d.toISOString()}
                   type="button"
                   onClick={() => setPicked(d)}
-                  className={`rounded-xl border px-1 py-2 text-left transition ${
+                  className={`min-w-0 rounded-lg border px-0.5 py-1.5 text-left transition sm:rounded-xl sm:px-1 sm:py-2 ${
                     on ? 'border-brand-500 bg-brand-50' : 'border-ink-900/[0.07] hover:border-brand-300'
                   } ${thisMonth ? '' : 'opacity-40'}`}
                 >
@@ -541,12 +557,12 @@ export default function PartnerPortal() {
                       {row.blackout ? (
                         <span className="block text-center text-[11px] font-bold text-rose-600">closed</span>
                       ) : (
-                        <span className="num block text-center text-[12px] font-bold text-emerald-700">
-                          {row.rate > 0 ? `${row.rateFrom ? 'from ' : ''}${shortInr(row.rate)}` : '—'}
+                        <span className="num block truncate text-center text-[10px] font-bold text-emerald-700 sm:text-[12px]">
+                          {row.rate > 0 ? <>{row.rateFrom && <span className="hidden sm:inline">from </span>}{shortInr(row.rate)}</> : '—'}
                         </span>
                       )}
                       {row.staying > 0 && (
-                        <span className="block text-center text-[10px] text-ink-500">{row.staying} staying</span>
+                        <span className="block truncate text-center text-[9px] text-ink-500 sm:text-[10px]">{row.staying}<span className="hidden sm:inline"> staying</span></span>
                       )}
                     </>
                   )}
@@ -570,7 +586,7 @@ export default function PartnerPortal() {
                       {i.units} rooms in total{i.rate > 0 ? ` · usually ${inr(i.rate)}` : ''}
                     </span>
                   </span>
-                  <span className="flex flex-wrap items-end gap-2">
+                  <span className="grid w-full grid-cols-[1fr_1fr_auto] items-end gap-2 sm:flex sm:w-auto sm:flex-wrap">
                     <label className="block">
                       <span className="mb-1 block text-[10px] font-bold uppercase tracking-[0.08em] text-ink-400">
                         Rooms open
@@ -582,7 +598,7 @@ export default function PartnerPortal() {
                         key={`rooms-${i.id}-${picked.toDateString()}`}
                         defaultValue={pickedRooms(i)}
                         onChange={(e) => setRoomsOpen((v) => ({ ...v, [i.id]: e.target.value }))}
-                        className="input h-9 w-24 py-0 text-sm"
+                        className="input h-9 w-full py-0 text-sm sm:w-24"
                       />
                     </label>
                     <label className="block">
@@ -596,10 +612,10 @@ export default function PartnerPortal() {
                         defaultValue={pickedRate(i)}
                         placeholder={i.rate ? String(i.rate) : 'Usual rate'}
                         onChange={(e) => setDayRate((v) => ({ ...v, [i.id]: e.target.value }))}
-                        className="input h-9 w-28 py-0 text-sm"
+                        className="input h-9 w-full py-0 text-sm sm:w-28"
                       />
                     </label>
-                    <button type="button" className="btn-action btn-sm" onClick={() => saveDay(i)}>
+                    <button type="button" className="btn-action btn-sm h-9" onClick={() => saveDay(i)}>
                       Save
                     </button>
                   </span>
@@ -631,7 +647,7 @@ export default function PartnerPortal() {
           title="Who is looking"
           note="How often your listing was opened on the Smira Club website"
         >
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
             <Figure label="Views this week" value={score?.views?.last7 ?? 0} tone="text-brand-700" />
             <Figure label="Views this month" value={score?.views?.last30 ?? 0} />
             <Figure label="Views all time" value={score?.views?.total ?? 0} />
@@ -688,7 +704,7 @@ export default function PartnerPortal() {
           )}
         </Panel>
 
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
           <Figure label="Bookings sent to you" value={score?.bookings ?? 0} />
           <Figure label="Answered" value={score?.answered ?? 0} hint={`${score?.waiting ?? 0} waiting`} />
           <Figure
@@ -756,7 +772,7 @@ export default function PartnerPortal() {
         {guests.length ? (
           <ul className="divide-y divide-ink-900/[0.07] overflow-hidden rounded-xl border border-ink-900/[0.07]">
             {guests.map((g) => (
-              <li key={g.name} className="flex items-center justify-between px-4 py-3 text-sm">
+              <li key={g.name} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 px-4 py-3 text-sm">
                 <span className="font-semibold text-ink-900">{g.name}</span>
                 <span className="text-ink-500">
                   {g.stays} stay{g.stays === 1 ? '' : 's'} · last {day(g.last)}
@@ -776,7 +792,7 @@ export default function PartnerPortal() {
           <Paged items={bookings}>
             {(shown) => (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[480px] text-sm">
+                <table className="stack-mobile w-full min-w-[480px] text-sm">
                   <thead>
                     <tr className="border-b border-ink-900/[0.07] text-left">
                       {['Booking', 'Guest', 'Payout', 'Paid', 'Balance'].map((h) => (
@@ -837,7 +853,7 @@ export default function PartnerPortal() {
         {p?.documents?.length ? (
           <ul className="divide-y divide-ink-900/[0.07] overflow-hidden rounded-xl border border-ink-900/[0.07]">
             {p.documents.map((d) => (
-              <li key={d.name} className="flex items-center justify-between px-4 py-3 text-sm">
+              <li key={d.name} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
                 <span className="font-semibold text-ink-900">{d.name}</span>
                 <Badge tone={d.status === 'Verified' ? 'green' : 'amber'}>{d.status}</Badge>
               </li>
@@ -862,7 +878,7 @@ export default function PartnerPortal() {
         {data?.tickets?.length ? (
           <ul className="divide-y divide-ink-900/[0.07] overflow-hidden rounded-xl border border-ink-900/[0.07]">
             {data.tickets.map((t) => (
-              <li key={t.id} className="flex items-center justify-between px-4 py-3 text-sm">
+              <li key={t.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
                 <span>
                   <span className="num font-bold text-brand-700">{t.code}</span>{' '}
                   <span className="text-ink-800">{t.subject}</span>
@@ -961,11 +977,11 @@ export default function PartnerPortal() {
   );
 
   return (
-    <div className="min-h-screen bg-surface-soft">
+    <div ref={shell} className="min-h-screen bg-surface-soft">
       {/* -- Top bar ------------------------------------------------------- */}
       <header className="sticky top-0 z-30 border-b border-ink-900/[0.07] bg-white">
-        <div className="flex items-center gap-4 px-4 py-2.5 sm:px-6">
-          <Brand className="h-9 sm:h-10" />
+        <div className="flex items-center gap-3 px-3 py-2 sm:gap-4 sm:px-6 sm:py-2.5">
+          <Brand className="h-8 sm:h-10" />
           <span className="chip hidden bg-brand-50 text-brand-700 sm:inline-flex">Partner portal</span>
           <div className="ml-auto flex items-center gap-2">
             <span className="hidden text-right sm:block">
@@ -981,23 +997,6 @@ export default function PartnerPortal() {
           </div>
         </div>
 
-        {/* The sections, as a scroller on a phone. */}
-        {me?.live && (
-        <nav className="no-scrollbar flex gap-1 overflow-x-auto border-t border-ink-900/[0.05] px-3 py-2 lg:hidden">
-          {SECTIONS.map(({ key, label }) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setSection(key)}
-              className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold ${
-                section === key ? 'bg-brand-50 text-brand-800' : 'text-ink-500'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </nav>
-        )}
       </header>
 
       {error && !me ? (
@@ -1024,7 +1023,7 @@ export default function PartnerPortal() {
             <button
               key={key}
               type="button"
-              onClick={() => setSection(key)}
+              onClick={() => go(key)}
               className={`relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-semibold transition ${
                 section === key ? 'bg-brand-50 text-brand-800' : 'text-ink-600 hover:bg-surface-soft'
               }`}
@@ -1038,9 +1037,9 @@ export default function PartnerPortal() {
           ))}
         </aside>
 
-        <main className="min-w-0 flex-1 space-y-4 p-4 sm:p-6">
+        <main className="min-w-0 flex-1 space-y-3 p-3 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] sm:space-y-4 sm:p-6 lg:pb-6">
           <div>
-            <h1 className="font-display text-2xl font-extrabold tracking-tight text-ink-900">
+            <h1 className="font-display text-xl font-extrabold tracking-tight text-ink-900 sm:text-2xl">
               {SECTIONS.find((s) => s.key === section)?.label}
             </h1>
             {section === 'dashboard' && (
@@ -1073,6 +1072,17 @@ export default function PartnerPortal() {
           )}
         </main>
       </div>
+      )}
+
+      {me?.live && (
+        <PortalTabBar
+          section={section}
+          onSection={go}
+          sections={SECTIONS}
+          waiting={waiting.length}
+          moreOpen={moreOpen}
+          setMoreOpen={setMoreOpen}
+        />
       )}
     </div>
   );
