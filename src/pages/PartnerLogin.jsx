@@ -417,7 +417,7 @@ export default function PartnerLogin() {
 
   return (
     <div className="min-h-screen bg-surface-base bg-app-aurora">
-      <div className="mx-auto grid max-w-[1240px] items-start gap-10 px-5 py-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-14">
+      <div className="mx-auto grid max-w-[1240px] grid-cols-1 items-start gap-8 px-4 py-6 sm:gap-10 sm:px-5 sm:py-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-14">
         {/*
           The pitch, where a desktop has the room for it. A partner
           deciding whether to bother reads this before the form.
@@ -459,7 +459,7 @@ export default function PartnerLogin() {
             <Brand className="h-11" />
           </div>
 
-          <div className="card p-5 sm:p-6">
+          <div className="card p-4 sm:p-6">
           <span className="chip bg-brand-50 text-brand-700">
             <Handshake size={13} /> Partner portal
           </span>
@@ -498,7 +498,7 @@ export default function PartnerLogin() {
                 next, in the portal.
               </p>
 
-              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Field label="Business name" required error={errors.name}>
                   <input className="input" value={form.name} onChange={set('name')} placeholder="Coral Bay Stays" />
                 </Field>
@@ -541,7 +541,7 @@ export default function PartnerLogin() {
                 {/* The number, and the code that proves it. */}
                 <Field label="Mobile number" required error={errors.phone}>
                   <span className="flex gap-2">
-                    <span className="flex flex-1 overflow-hidden rounded-xl border border-ink-900/10 focus-within:border-brand-400">
+                    <span className="flex min-w-0 flex-1 overflow-hidden rounded-xl border border-ink-900/10 focus-within:border-brand-400">
                       <span className="flex items-center gap-1.5 border-r border-ink-900/10 bg-surface-soft px-3 text-sm font-bold text-ink-700">
                         <Smartphone size={15} className="text-ink-400" /> +91
                       </span>
