@@ -1,0 +1,140 @@
+/**
+ * The partner portal's line to the API.
+ *
+ * Kept apart from the staff client on purpose. A partner's token lives under
+ * its own key, so a hotelier signing in on a shared office machine never
+ * inherits — or overwrites — a desk member's session, and signing out of one
+ * leaves the other alone. The backend refuses to let either token open the
+ * other's routes; this keeps the browser from mixing them up in the first place.
+ */
+import { apiBase } from './api.js';
+
+const TOKEN_KEY = 'smira-club-partner:token';
+
+export const partnerLive = Boolean(apiBase);
+
+export function getPartnerToken() {
+  try {
+    return localStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setPartnerToken(token) {
+  try {
+    if (token) localStorage.setItem(TOKEN_KEY, token);
+    else localStorage.removeItem(TOKEN_KEY);
+  } catch {
+    /* storage blocked — the session lasts until the tab closes */
+  }
+}
+
+export class PartnerApiError extends Error {
+  constructor(status, message, details) {
+    super(message);
+    this.status = status;
+    this.details = details;
+  }
+}
+
+async function request(path, { method = 'GET', body } = {}) {
+  if (!apiBase) throw new PartnerApiError(0, 'The partner portal needs the Smira API');
+
+  const token = getPartnerToken();
+  let res;
+  try {
+    res = await fetch(`${apiBase}/partner-portal${path}`, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch {
+    throw new PartnerApiError(0, 'Could not reach Smira just now — check your connection');
+  }
+
+  const json = await res.json().catch(() => ({}));
+
+  // An expired or refused token: drop it so the portal sends them to sign in.
+  if (res.status === 401) setPartnerToken(null);
+
+  if (!res.ok) throw new PartnerApiError(res.status, json.message || 'That did not work', json.details);
+  return json;
+}
+
+export const partnerApi = {
+  /**
+   * Registering: the property's own details, with nobody signed in. It is
+   * the same open route the website's Become a Partner form posts to, so a
+   * hotelier can start from either and the desk sees one application.
+   */
+  apply: async (form) => {
+    if (!apiBase) throw new PartnerApiError(0, 'The partner portal needs the Smira API');
+    let res;
+    try {
+      res = await fetch(`${apiBase}/partners/apply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+    } catch {
+      throw new PartnerApiError(0, 'Could not reach Smira just now — check your connection');
+    }
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new PartnerApiError(res.status, json.message || 'That did not work', json.details);
+    return json;
+  },
+
+  /** 'login' only finds a partner we hold; 'register' only makes a new one. */
+  requestOtp: (phone, mode = 'login') => request('/otp/request', { method: 'POST', body: { phone, mode } }),
+  verifyOtp: (phone, code, mode = 'login') => request('/otp/verify', { method: 'POST', body: { phone, code, mode } }),
+
+  /** The short registration form, and the email-and-password door. */
+  register: (body) => request('/register', { method: 'POST', body }),
+  login: (email, password) => request('/login', { method: 'POST', body: { email, password } }),
+  setPassword: (password) => request('/password', { method: 'POST', body: { password } }),
+  /**
+   * A scan or a photograph of a document. It does not go through
+   * `request` because uploads live outside the portal's own routes — the
+   * desk posts the same files to the same store through its own door.
+   */
+  uploadDocument: async (body) => {
+    if (!apiBase) throw new PartnerApiError(0, 'The partner portal needs the Smira API');
+    const token = getPartnerToken();
+    let res;
+    try {
+      res = await fetch(`${apiBase}/uploads/partner`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(body),
+      });
+    } catch {
+      throw new PartnerApiError(0, 'Could not reach Smira just now — check your connection');
+    }
+    const json = await res.json().catch(() => ({}));
+    if (res.status === 401) setPartnerToken(null);
+    if (!res.ok) throw new PartnerApiError(res.status, json.message || 'That did not upload', json.details);
+    return json;
+  },
+
+  getListing: () => request('/listing'),
+  saveListing: (body) => request('/listing', { method: 'PUT', body }),
+  submitListing: () => request('/listing/submit', { method: 'POST' }),
+  dashboard: () => request('/dashboard'),
+  accept: (id) => request(`/bookings/${id}/accept`, { method: 'POST' }),
+  decline: (id) => request(`/bookings/${id}/decline`, { method: 'POST' }),
+  setAccepting: (open) => request('/accepting', { method: 'PATCH', body: { open } }),
+  performance: () => request('/performance'),
+  availability: (from, days = 42) => request(`/availability?from=${from}&days=${days}`),
+  /** Their own short discounts: nothing to approve, so nothing to wait for. */
+  flashOffers: () => request('/flash-offers'),
+  createFlashOffer: (body) => request('/flash-offers', { method: 'POST', body }),
+  stopFlashOffer: (id) => request(`/flash-offers/${id}/stop`, { method: 'POST' }),
+  setAvailability: (body) => request('/availability', { method: 'PATCH', body }),
+};

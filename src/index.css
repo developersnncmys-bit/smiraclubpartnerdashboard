@@ -1,0 +1,314 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-surface-base text-ink-800 font-sans antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display text-ink-900;
+  }
+
+  ::selection {
+    @apply bg-brand-200 text-brand-900;
+  }
+
+  /* One visible focus treatment for every interactive element. */
+  :where(button, a, input, select, textarea, [tabindex]):focus-visible {
+    @apply outline-none ring-2 ring-brand-500/35 ring-offset-2 ring-offset-surface-base;
+  }
+}
+
+@layer components {
+  /* -- Surfaces ---------------------------------------------------------- */
+  .card {
+    @apply bg-surface-card rounded-2xl border border-ink-900/[0.07] shadow-card;
+  }
+
+  .card-hover {
+    @apply transition-all duration-200 hover:border-ink-900/10 hover:shadow-raised;
+  }
+
+  /* Section label above a heading — the strongest "this is a CRM" cue. */
+  .eyebrow {
+    @apply text-[11px] font-bold uppercase tracking-[0.14em] text-ink-400;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold;
+  }
+
+  /* -- Controls ---------------------------------------------------------- */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-semibold leading-none
+           transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply btn bg-brand-600 text-white shadow-glow hover:bg-brand-700 active:bg-brand-800;
+  }
+
+  .btn-ghost {
+    @apply btn border border-ink-900/10 bg-white text-ink-700 shadow-xs hover:border-ink-900/20 hover:bg-surface-soft hover:text-ink-900;
+  }
+
+  .btn-soft {
+    @apply btn bg-brand-50 text-brand-700 hover:bg-brand-100;
+  }
+
+  .btn-danger {
+    @apply btn bg-rose-600 text-white hover:bg-rose-700;
+  }
+
+  .btn-sm {
+    @apply px-2.5 py-1.5 text-xs;
+  }
+
+  /* -- The panel's own buttons ------------------------------------------- */
+
+  /**
+   * The action button: a raised teal pill with an inner highlight and a lift
+   * on hover. This is the panel's signature control — used for anything that
+   * starts work (assign, schedule, reassign, resolve).
+   */
+  .btn-action {
+    @apply btn relative rounded-xl bg-gradient-to-b from-brand-500 to-brand-700 px-4 py-2.5 text-white
+           shadow-[0_1px_0_rgba(255,255,255,0.28)_inset,0_8px_18px_-8px_rgba(11,132,114,0.75)]
+           transition-all duration-150 hover:-translate-y-px
+           hover:shadow-[0_1px_0_rgba(255,255,255,0.28)_inset,0_12px_22px_-8px_rgba(11,132,114,0.8)]
+           active:translate-y-0 active:from-brand-600 active:to-brand-800;
+  }
+
+  /** The same shape, quieter: a white pill on a hairline that tints on hover. */
+  .btn-line {
+    @apply btn rounded-xl border border-ink-900/10 bg-white px-3.5 py-2 text-ink-700 shadow-xs
+           transition-all duration-150 hover:-translate-y-px hover:border-brand-300
+           hover:bg-brand-50 hover:text-brand-700 hover:shadow-raised active:translate-y-0;
+  }
+
+  /** Destructive twin of .btn-line, for resolve-and-dismiss style actions. */
+  .btn-line-danger {
+    @apply btn-line hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700;
+  }
+
+  /**
+   * A quick-action tile: icon above a label, in a grid. Used for the action
+   * rails the client's sheet asks for on every module.
+   */
+  .qa {
+    @apply flex flex-col items-center justify-center gap-1.5 rounded-xl border border-ink-900/[0.07]
+           bg-white px-2 py-3 text-[11px] font-bold leading-tight text-ink-600 shadow-xs
+           transition-all duration-150 hover:-translate-y-0.5 hover:border-brand-300
+           hover:bg-brand-50 hover:text-brand-700 hover:shadow-raised;
+  }
+
+  /** A segmented control: one track, the live segment lifted out of it. */
+  .seg {
+    @apply inline-flex items-center gap-1 rounded-xl bg-surface-soft p-1;
+  }
+
+  .seg-item {
+    @apply rounded-lg px-3 py-1.5 text-xs font-bold text-ink-500 transition-all duration-150
+           hover:text-ink-800;
+  }
+
+  .seg-item-on {
+    @apply bg-white text-brand-700 shadow-xs;
+  }
+
+  /** A left colour rail on a row — how live status reads at a glance. */
+  .rail {
+    @apply relative overflow-hidden rounded-2xl before:absolute before:inset-y-0 before:left-0
+           before:w-1 before:content-[''];
+  }
+
+  /* Square icon button used across tables and cards. */
+  .icon-btn {
+    @apply grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-ink-900/10 bg-white text-ink-500
+           transition-colors hover:border-brand-300 hover:text-brand-700;
+  }
+
+  .icon-btn-danger {
+    @apply icon-btn hover:border-rose-300 hover:text-rose-600;
+  }
+
+  .input {
+    @apply w-full rounded-lg border border-ink-900/10 bg-white px-3 py-2.5 text-sm text-ink-800 placeholder:text-ink-400 outline-none transition
+           focus:border-brand-400 focus:ring-2 focus:ring-brand-500/15;
+  }
+
+  .label {
+    @apply mb-1.5 block text-xs font-semibold text-ink-600;
+  }
+
+  /* -- Tables ------------------------------------------------------------ */
+  .th {
+    @apply whitespace-nowrap border-b border-ink-900/[0.07] bg-surface-soft/70 px-5 py-3 text-left
+           text-[11px] font-bold uppercase tracking-[0.08em] text-ink-500;
+  }
+
+  .td {
+    @apply px-5 py-3.5 text-sm align-middle text-ink-700;
+  }
+
+  .num {
+    @apply tabular-nums;
+  }
+}
+
+/* -- Phones ---------------------------------------------------------------- */
+@media (max-width: 639px) {
+  /* Under 16px, iOS zooms the whole page the moment a field is tapped. */
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  /* The full-screen record panels (lead, booking, member…): their header
+     carries a title and a row of buttons, which wraps here instead of
+     running off the right edge. */
+  .fixed.inset-0 > aside > header {
+    flex-wrap: wrap;
+    padding: 0.75rem 1rem;
+    row-gap: 0.5rem;
+  }
+
+  /* A finger needs a bigger target than a cursor does. */
+  .icon-btn {
+    height: 2.25rem;
+    width: 2.25rem;
+  }
+
+  /* A table that is still a table scrolls sideways smoothly, not the page. */
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/*
+  A table marked .stack-mobile becomes a stack of cards on a phone: the first
+  cell is the card's title, every other cell sits under its column's name
+  (copied onto it as data-label by useStackLabels). Same rows, same clicks —
+  only the arrangement changes, and from 768px up it is the table again.
+*/
+@media (max-width: 767px) {
+  table.stack-mobile {
+    display: block;
+    min-width: 0 !important;
+    width: 100%;
+  }
+  table.stack-mobile thead {
+    display: none;
+  }
+  table.stack-mobile tbody,
+  table.stack-mobile tfoot {
+    display: block;
+  }
+  table.stack-mobile tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem 0.75rem;
+    margin-bottom: 0.5rem;
+    padding: 0.75rem;
+    border: 1px solid rgba(11, 21, 36, 0.08) !important;
+    border-radius: 0.875rem;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(11, 21, 36, 0.05);
+  }
+  table.stack-mobile tfoot tr {
+    background: #eef2f7;
+    border-width: 2px !important;
+  }
+  table.stack-mobile td {
+    display: block;
+    min-width: 0;
+    padding: 0 !important;
+    text-align: left !important;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    font-size: 13px;
+  }
+  table.stack-mobile td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 0.125rem;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #96a2b4;
+  }
+  /* The title of the card: full width, no label, a hairline under it. */
+  table.stack-mobile td:first-child {
+    grid-column: 1 / -1;
+    padding-bottom: 0.5rem !important;
+    border-bottom: 1px solid rgba(11, 21, 36, 0.06);
+    font-size: 14px;
+  }
+  table.stack-mobile td:first-child::before,
+  table.stack-mobile td:not([data-label])::before,
+  table.stack-mobile td[data-label='']::before {
+    display: none;
+  }
+  /* Buttons, unlabelled cells and "nothing here" rows take the whole width. */
+  table.stack-mobile td[colspan],
+  table.stack-mobile td[data-label=''],
+  table.stack-mobile td[data-label='Action'],
+  table.stack-mobile td[data-label='Actions'] {
+    grid-column: 1 / -1;
+  }
+  table.stack-mobile td[colspan] {
+    border-bottom: 0;
+    text-align: center !important;
+  }
+  /* A cell that only held a checkbox needs no room of its own. */
+  table.stack-mobile td:has(> input[type='checkbox']:only-child) {
+    position: absolute;
+    right: 0.75rem;
+    top: 0.75rem;
+    border: 0;
+  }
+  table.stack-mobile tr:has(> td > input[type='checkbox']:only-child) {
+    position: relative;
+  }
+}
+
+/* Slim, unobtrusive scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(11, 21, 36, 0.18) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(11, 21, 36, 0.16);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(11, 21, 36, 0.28);
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
