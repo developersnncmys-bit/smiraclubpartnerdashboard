@@ -58,6 +58,19 @@ const confirmationTone = (c = '') => {
   return 'amber';
 };
 
+/**
+ * What a day on the availability calendar is, and how it is drawn. The
+ * server says which (status); a day it has nothing on is plain.
+ */
+const DAY_KINDS = [
+  { key: 'open', label: 'Available (rate)', word: '', swatch: 'bg-white border border-ink-900/15', cell: 'border-ink-900/[0.07] bg-white', date: 'text-ink-900', text: '' },
+  { key: 'partial', label: 'Partly booked', word: '', swatch: 'bg-amber-100 border border-amber-300', cell: 'border-amber-200 bg-amber-50', date: 'text-ink-900', text: '' },
+  { key: 'booked', label: 'Fully booked', word: 'Booked', swatch: 'bg-rose-200 border border-rose-300', cell: 'border-rose-200 bg-rose-50', date: 'text-rose-800', text: 'text-rose-700' },
+  { key: 'blocked', label: 'Blocked', word: 'Blocked', swatch: 'bg-ink-900/15', cell: 'border-ink-900/10 bg-ink-900/[0.06]', date: 'text-ink-500', text: 'text-ink-500' },
+  { key: 'black', label: 'Black day', word: 'Black', swatch: 'bg-ink-900', cell: 'border-ink-900 bg-ink-900', date: 'text-white', text: 'text-white' },
+];
+const dayKindOf = (row) => DAY_KINDS.find((k) => k.key === (row?.status || (row?.blackout ? 'black' : 'open'))) || DAY_KINDS[0];
+
 /** One figure in the overview row. */
 function Figure({ label, value, hint, tone = 'text-ink-900' }) {
   return (
@@ -303,6 +316,28 @@ export default function PartnerPortal() {
   };
 
   /** How many rooms of one property are open on the chosen day, and at what. */
+  /** Block / unblock / black day / lift a black day — all rooms, the picked day. */
+  const [dayBusy, setDayBusy] = useState('');
+  const [dayNote, setDayNote] = useState('');
+  const [blackReason, setBlackReason] = useState('');
+  const ymdOf = (d) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const dayAction = async (action) => {
+    if (!picked) return;
+    setDayBusy(action);
+    setDayNote('');
+    try {
+      const res = await partnerApi.setDay({ date: ymdOf(picked), action, reason: blackReason });
+      await loadCalendar();
+      setDayNote(res.message || 'Saved');
+      if (action === 'black') setBlackReason('');
+    } catch (err) {
+      setDayNote(err.message || 'That did not save');
+    } finally {
+      setDayBusy('');
+    }
+  };
+
   const saveDay = async (item) => {
     if (!picked) return;
     try {
@@ -534,6 +569,15 @@ export default function PartnerPortal() {
             </span>
           }
         >
+          {/* What the colours mean. */}
+          <ul className="mb-3 flex flex-wrap gap-x-3 gap-y-1.5 text-[11px] font-semibold text-ink-600">
+            {DAY_KINDS.map((k) => (
+              <li key={k.key} className="flex items-center gap-1.5">
+                <span className={`h-3 w-3 rounded ${k.swatch}`} /> {k.label}
+              </li>
+            ))}
+          </ul>
+
           <div className="grid grid-cols-7 gap-1 text-center sm:gap-1.5">
             {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
               <span key={d} className="pb-1 text-[11px] font-bold uppercase tracking-wide text-ink-400">{d}</span>
@@ -542,29 +586,31 @@ export default function PartnerPortal() {
               const row = calDay(d);
               const thisMonth = d.getMonth() === month.getMonth();
               const on = picked && d.toDateString() === picked.toDateString();
+              const kind = dayKindOf(row);
               return (
                 <button
                   key={d.toISOString()}
                   type="button"
-                  onClick={() => setPicked(d)}
-                  className={`min-w-0 rounded-lg border px-0.5 py-1.5 text-left transition sm:rounded-xl sm:px-1 sm:py-2 ${
-                    on ? 'border-brand-500 bg-brand-50' : 'border-ink-900/[0.07] hover:border-brand-300'
+                  onClick={() => { setPicked(d); setDayNote(''); }}
+                  className={`min-w-0 rounded-lg border px-0.5 py-1.5 text-left transition sm:rounded-xl sm:px-1 sm:py-2 ${kind.cell} ${
+                    on ? 'ring-2 ring-brand-500 ring-offset-1' : 'hover:border-brand-300'
                   } ${thisMonth ? '' : 'opacity-40'}`}
                 >
-                  <span className="num block text-center text-xs font-bold text-ink-900">{d.getDate()}</span>
+                  <span className={`num block text-center text-xs font-bold ${kind.date}`}>{d.getDate()}</span>
                   {row && (
                     <>
-                      {/* The price is what a day is for. The room count lives in
-                          the day panel below, where it can be changed. */}
-                      {row.blackout ? (
-                        <span className="block text-center text-[11px] font-bold text-rose-600">closed</span>
-                      ) : (
+                      {/* The rate on an open day; on any other, what the day is. */}
+                      {kind.key === 'open' || kind.key === 'partial' ? (
                         <span className="num block truncate text-center text-[10px] font-bold text-emerald-700 sm:text-[12px]">
                           {row.rate > 0 ? <>{row.rateFrom && <span className="hidden sm:inline">from </span>}{shortInr(row.rate)}</> : '—'}
                         </span>
+                      ) : (
+                        <span className={`block truncate text-center text-[9.5px] font-bold sm:text-[11px] ${kind.text}`}>{kind.word}</span>
                       )}
-                      {row.staying > 0 && (
-                        <span className="block truncate text-center text-[9px] text-ink-500 sm:text-[10px]">{row.staying}<span className="hidden sm:inline"> staying</span></span>
+                      {kind.key === 'partial' && (
+                        <span className="block truncate text-center text-[9px] font-semibold text-amber-700 sm:text-[10px]">
+                          {row.staying}<span className="hidden sm:inline"> booked</span>
+                        </span>
                       )}
                     </>
                   )}
@@ -580,6 +626,62 @@ export default function PartnerPortal() {
         >
           {picked ? (
             <div className="space-y-3">
+              {(() => {
+                const row = calDay(picked);
+                const kind = dayKindOf(row);
+                const deskBlack = row?.blackoutBy === 'desk';
+                return (
+                  <div className="rounded-xl bg-surface-soft p-3">
+                    <p className="flex flex-wrap items-center gap-2 text-sm">
+                      <span className={`h-3 w-3 rounded ${kind.swatch}`} />
+                      <span className="font-bold text-ink-900">{kind.label}</span>
+                      {row?.rate > 0 && kind.key !== 'black' && <span className="text-ink-500">· {inr(row.rate)} a night{row.rateFrom ? ' (from)' : ''}</span>}
+                      {row?.units > 0 && kind.key !== 'black' && <span className="text-ink-500">· {row.open} of {row.units} rooms open</span>}
+                    </p>
+                    {row?.blackoutReason && kind.key === 'black' && (
+                      <p className="mt-1 text-xs text-ink-500">Reason: {row.blackoutReason}{deskBlack ? ' · set by the Smira desk' : ''}</p>
+                    )}
+
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      {kind.key === 'blocked' ? (
+                        <button type="button" className="btn-line btn-sm justify-center" disabled={!!dayBusy} onClick={() => dayAction('unblock')}>
+                          {dayBusy === 'unblock' && <Loader2 size={13} className="animate-spin" />} Unblock this day
+                        </button>
+                      ) : (
+                        <button type="button" className="btn-line btn-sm justify-center" disabled={!!dayBusy || kind.key === 'black'} onClick={() => dayAction('block')}>
+                          {dayBusy === 'block' && <Loader2 size={13} className="animate-spin" />} Block this day
+                        </button>
+                      )}
+                      {kind.key === 'black' ? (
+                        <button type="button" className="btn-line btn-sm justify-center" disabled={!!dayBusy || deskBlack} onClick={() => dayAction('unblack')}>
+                          {dayBusy === 'unblack' && <Loader2 size={13} className="animate-spin" />} Remove black day
+                        </button>
+                      ) : (
+                        <button type="button" className="btn-sm justify-center rounded-xl bg-ink-900 font-bold text-white hover:bg-ink-800 disabled:opacity-50" disabled={!!dayBusy} onClick={() => dayAction('black')}>
+                          {dayBusy === 'black' && <Loader2 size={13} className="animate-spin" />} Mark as black day
+                        </button>
+                      )}
+                    </div>
+                    {kind.key !== 'black' && (
+                      <input
+                        className="input mt-2 h-9 py-0 text-sm"
+                        placeholder="Black day reason (optional) — e.g. Diwali peak, maintenance"
+                        value={blackReason}
+                        onChange={(e) => setBlackReason(e.target.value)}
+                      />
+                    )}
+                    <p className="mt-2 text-[11px] leading-snug text-ink-500">
+                      <b>Block</b> stops new bookings that day. A <b>black day</b> closes it to Smira members, with a reason.
+                      Bookings you already have stay.
+                    </p>
+                    {dayNote && <p className="mt-2 text-xs font-bold text-brand-700">{dayNote}</p>}
+                  </div>
+                );
+              })()}
+
+              {(calendar?.items || []).length > 0 && (
+                <p className="eyebrow pt-1">Rooms and rate by room type</p>
+              )}
               {(calendar?.items || []).map((i) => (
                 <div key={i.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ink-900/[0.07] px-4 py-3">
                   <span className="min-w-0">
