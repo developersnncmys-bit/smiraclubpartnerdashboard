@@ -15,6 +15,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<PartnerPortal />} />
       <Route path="/login" element={<PartnerLogin />} />
+      <Route path="/register" element={<PartnerLogin />} />
       <Route path="/partner" element={<Navigate to="/" replace />} />
       <Route path="/partner/login" element={<Navigate to="/login" replace />} />
       <Route path="*" element={<Navigate to="/" replace />} />

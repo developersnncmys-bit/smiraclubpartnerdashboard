@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
   ChevronDown,
@@ -203,7 +203,11 @@ function Contact() {
 export default function PartnerLogin() {
   const navigate = useNavigate();
 
-  const [mode, setMode] = useState('login');
+  const location = useLocation();
+  // /register (or ?mode=register) opens on the Register tab — where the website's "Register as a partner" lands.
+  const [mode, setMode] = useState(() =>
+    location.pathname === '/register' || new URLSearchParams(location.search).get('mode') === 'register' ? 'register' : 'login'
+  );
   /** Within signing in: a code to the phone, or an email and a password. */
   const [door, setDoor] = useState('otp');
 
