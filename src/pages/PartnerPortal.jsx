@@ -16,6 +16,7 @@ import Paged from '../components/ui/Pagination.jsx';
 import PortalTabBar from '../components/partners/PortalTabBar.jsx';
 import useStackLabels from '../lib/useStackLabels.js';
 import SetPassword from '../components/partners/SetPassword.jsx';
+import JourneySteps from '../components/partners/JourneySteps.jsx';
 
 /**
  * The partner portal — the only thing a partner can open.
@@ -919,12 +920,13 @@ export default function PartnerPortal() {
 
   /** Everything before live: the form, or where the form has got to. */
   const journey = me && !me.live && (
-    <div className="mx-auto w-full max-w-4xl space-y-4 p-4 sm:p-6">
+    <div className="mx-auto w-full max-w-4xl space-y-3 p-3 sm:space-y-4 sm:p-6">
       <div className="card p-5">
         <p className="text-[11px] font-extrabold uppercase tracking-wide text-brand-600">Your listing</p>
-        <h1 className="mt-1 font-display text-2xl font-extrabold tracking-tight text-ink-900">
+        <h1 className="mt-1 font-display text-xl font-extrabold tracking-tight text-ink-900 sm:text-2xl">
           {me.name === 'New partner' ? 'List your property with Smira Club' : me.name}
         </h1>
+        <JourneySteps me={me} deskPhone={DESK_PHONE} deskTel={DESK_TEL} />
       </div>
 
       {me.editable ? (

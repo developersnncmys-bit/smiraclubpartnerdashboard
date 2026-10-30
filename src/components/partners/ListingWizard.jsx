@@ -21,11 +21,11 @@ import { checkPartnerForm, flatten, firstBadStep } from '../../lib/partnerForm.j
  */
 
 const STEPS = [
-  { n: 1, title: 'Account and property' },
-  { n: 2, title: 'Rooms' },
-  { n: 3, title: 'Amenities' },
-  { n: 4, title: 'Pricing and inventory' },
-  { n: 5, title: 'Ownership and legal' },
+  { n: 1, title: 'Account and property', short: 'Property' },
+  { n: 2, title: 'Rooms', short: 'Rooms' },
+  { n: 3, title: 'Amenities', short: 'Amenities' },
+  { n: 4, title: 'Pricing and inventory', short: 'Pricing' },
+  { n: 5, title: 'Ownership and legal', short: 'Legal' },
 ];
 
 /*
@@ -563,6 +563,9 @@ export default function ListingWizard({
       kind,
     );
 
+  const all = everything();
+  const left = Object.keys(all[step] || {}).length;
+
   const checkStep = (n) => {
     const found = everything()[n] || {};
     setErrors(found);
@@ -625,25 +628,47 @@ export default function ListingWizard({
         </div>
       )}
 
-      {/* -- Which step ----------------------------------------------------- */}
-      <div className="card p-4">
-        <ol className="grid grid-cols-5 gap-1.5">
-          {STEPS.map((s) => (
-            <li key={s.n}>
-              <button
-                type="button"
-                onClick={() => setStep(s.n)}
-                className={`w-full rounded-xl px-2 py-2 text-left transition ${
-                  step === s.n ? 'bg-brand-50 ring-1 ring-brand-200' : 'hover:bg-surface-soft'
-                }`}
-              >
-                <span className={`block text-[11px] font-extrabold ${step === s.n ? 'text-brand-700' : 'text-ink-400'}`}>
-                  STEP {s.n}
-                </span>
-                <span className="hidden text-xs font-bold text-ink-800 sm:block">{s.title}</span>
-              </button>
-            </li>
-          ))}
+      {/*
+        -- Which step ------------------------------------------------------
+        Numbered circles with a name under each, a tick on every step whose
+        answers are all in, and the next step named — "STEP 1 … STEP 5"
+        alone told a partner neither what was coming nor how far they were.
+      */}
+      <div className="card p-3 sm:p-4">
+        <ol className="flex items-start">
+          {STEPS.map((s, i) => {
+            const complete = !Object.keys(all[s.n] || {}).length;
+            const on = step === s.n;
+            return (
+              <li key={s.n} className="relative flex flex-1 flex-col items-center">
+                {i > 0 && (
+                  <span aria-hidden className={`absolute right-1/2 top-4 h-0.5 w-full -translate-y-1/2 ${complete || on ? 'bg-brand-300' : 'bg-ink-900/10'}`} />
+                )}
+                <button
+                  type="button"
+                  onClick={() => setStep(s.n)}
+                  aria-current={on ? 'step' : undefined}
+                  className="relative z-[1] flex flex-col items-center gap-1"
+                >
+                  <span
+                    className={`grid h-8 w-8 place-items-center rounded-full text-xs font-extrabold transition ${
+                      on
+                        ? 'bg-brand-600 text-white ring-4 ring-brand-100'
+                        : complete
+                          ? 'bg-emerald-500 text-white'
+                          : 'border border-ink-900/15 bg-white text-ink-500'
+                    }`}
+                  >
+                    {complete && !on ? <Check size={14} strokeWidth={3} /> : s.n}
+                  </span>
+                  <span className={`text-[10.5px] font-bold leading-tight sm:text-xs ${on ? 'text-brand-700' : 'text-ink-500'}`}>
+                    <span className="sm:hidden">{s.short}</span>
+                    <span className="hidden sm:inline">{s.title}</span>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
         </ol>
       </div>
 
@@ -653,12 +678,21 @@ export default function ListingWizard({
           <h2 className="font-display text-xl font-extrabold text-ink-900">
             {step === 2 ? kind.units : STEPS[step - 1].title}
           </h2>
+          {/* Counts down as they type, so the end of a long step is in sight. */}
+          <p className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${
+            left ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'
+          }`}>
+            {left ? `${left} answer${left === 1 ? '' : 's'} left on this step` : <><Check size={13} strokeWidth={3} /> All done on this step</>}
+          </p>
+          {step < 5 && (
+            <p className="mt-1.5 text-xs text-ink-500">Next: {STEPS[step].title}</p>
+          )}
         </div>
 
         {/* -- Step 1 -------------------------------------------------------- */}
         {step === 1 && (
           <>
-            <Group title="Account registration" note={`Signed in with ${partner?.phone || 'your mobile'}. No password — you sign in with a code each time.`}>
+            <Group title="Account registration" note={`Signed in with ${partner?.phone || 'your mobile'}. Sign in with a code, or set a password at the bottom of this page.`}>
               {/* What kind of account this is comes first: it decides who
                   is signing up, before anything about the person. */}
               <Field label="Account type" required error={errors.accountType}>
@@ -1198,19 +1232,23 @@ export default function ListingWizard({
         )}
         {!error && saved && <p className="text-xs font-semibold text-emerald-600">{saved}</p>}
 
-        {/* -- Moving through it -------------------------------------------- */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-ink-900/[0.07] pt-4">
-          <button type="button" onClick={() => setStep(Math.max(1, step - 1))} disabled={step === 1 || busy} className="btn-line">
-            <ArrowLeft size={15} /> Back
+        {/*
+          -- Moving through it ---------------------------------------------
+          On a phone the bar sticks to the bottom of the screen, so a long
+          step does not end in a hunt for the button that moves on.
+        */}
+        <div className="sticky bottom-0 z-10 -mx-4 -mb-4 flex items-center gap-2 border-t border-ink-900/[0.07] bg-white/95 px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 backdrop-blur sm:static sm:mx-0 sm:mb-0 sm:flex-wrap sm:justify-between sm:gap-3 sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-4 sm:backdrop-blur-none">
+          <button type="button" onClick={() => setStep(Math.max(1, step - 1))} disabled={step === 1 || busy} className="btn-line shrink-0" aria-label="Back">
+            <ArrowLeft size={15} /> <span className="hidden sm:inline">Back</span>
           </button>
 
           {step < 5 ? (
-            <button type="button" onClick={next} disabled={busy} className="btn-action">
+            <button type="button" onClick={next} disabled={busy} className="btn-action flex-1 py-3 sm:flex-none sm:py-2.5">
               {busy ? <Loader2 size={15} className="animate-spin" /> : null}
               Save and continue <ArrowRight size={15} />
             </button>
           ) : (
-            <button type="button" onClick={submit} disabled={busy || !agreed} className="btn-action">
+            <button type="button" onClick={submit} disabled={busy || !agreed} className="btn-action flex-1 py-3 sm:flex-none sm:py-2.5">
               {busy ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
               {finishLabel || (partner?.stage === 'Needs changes' ? 'Submit again' : 'Submit for review')}
             </button>
