@@ -309,13 +309,16 @@ export default function PartnerLogin() {
 
   const signInWithPassword = async (e) => {
     e?.preventDefault();
-    if (!isEmail(email)) return setError('Enter the email the account is under');
+    // A mobile number or an email: the server tells them apart.
+    const id = email.trim();
+    const mobileOk = id.replace(/\D/g, '').replace(/^91(?=\d{10}$)/, '').length === 10 && !id.includes('@');
+    if (!mobileOk && !isEmail(id)) return setError('Enter your 10-digit mobile number or your email');
     if (!password) return setError('Enter your password');
 
     setError('');
     setBusy(true);
     try {
-      const res = await partnerApi.login(email.trim(), password);
+      const res = await partnerApi.login(id, password);
       setPartnerToken(res.token);
       navigate('/', { replace: true });
     } catch (err) {
@@ -665,11 +668,11 @@ export default function PartnerLogin() {
           ) : (
             /* -- Sign in ------------------------------------------------ */
             <div className="mx-auto mt-5 max-w-[420px]">
-              {/* Two ways in: a code to the phone, or an email and a password. */}
+              {/* Two ways in: a code to the phone, or a password with the mobile number or email. */}
               <div className="grid grid-cols-2 gap-2">
                 {[
                   { key: 'otp', label: 'Mobile code', icon: Smartphone },
-                  { key: 'password', label: 'Email & password', icon: Lock },
+                  { key: 'password', label: 'Mobile & password', icon: Lock },
                 ].map((d) => (
                   <button
                     key={d.key}
@@ -695,20 +698,20 @@ export default function PartnerLogin() {
               {door === 'password' ? (
                 <form onSubmit={signInWithPassword} noValidate className="mt-4">
                   <h1 className="text-xl font-extrabold tracking-tight text-ink-900">Partner sign in</h1>
-                  <p className="mt-1 text-sm text-ink-500">The email and password you registered with.</p>
+                  <p className="mt-1 text-sm text-ink-500">Your mobile number (or email) and your password.</p>
 
                   <label className="mt-4 block">
-                    <span className="mb-1.5 block text-xs font-bold text-ink-700">Email address</span>
+                    <span className="mb-1.5 block text-xs font-bold text-ink-700">Mobile number or email</span>
                     <span className="flex overflow-hidden rounded-xl border border-ink-900/10 focus-within:border-brand-400 focus-within:ring-4 focus-within:ring-brand-100">
                       <span className="grid w-10 shrink-0 place-items-center border-r border-ink-900/10 bg-surface-soft text-ink-400">
-                        <Mail size={15} />
+                        <Smartphone size={15} />
                       </span>
                       <input
-                        type="email"
-                        autoComplete="email"
+                        type="text"
+                        autoComplete="username"
                         value={email}
                         onChange={(e) => { setEmail(e.target.value); setError(''); }}
-                        placeholder="you@business.com"
+                        placeholder="98765 43210"
                         className="min-w-0 flex-1 border-0 bg-white px-3 py-3 text-[15px] font-semibold text-ink-900 outline-none"
                       />
                     </span>
@@ -737,6 +740,10 @@ export default function PartnerLogin() {
                     {busy ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
                     {busy ? 'Signing in…' : 'Sign in'}
                   </button>
+
+                  <p className="mt-3 text-center text-xs text-ink-500">
+                    No password yet? Sign in with the mobile code, then set one under Profile.
+                  </p>
                 </form>
               ) : step === 'phone' ? (
                 <form onSubmit={send} noValidate className="mt-4">

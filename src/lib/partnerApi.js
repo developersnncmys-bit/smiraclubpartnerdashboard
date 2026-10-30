@@ -94,7 +94,8 @@ export const partnerApi = {
 
   /** The short registration form, and the email-and-password door. */
   register: (body) => request('/register', { method: 'POST', body }),
-  login: (email, password) => request('/login', { method: 'POST', body: { email, password } }),
+  /** A mobile number or an email, with the password. `email` too, for a server not yet updated. */
+  login: (id, password) => request('/login', { method: 'POST', body: { login: id, email: id, password } }),
   setPassword: (password) => request('/password', { method: 'POST', body: { password } }),
   /**
    * A scan or a photograph of a document. It does not go through

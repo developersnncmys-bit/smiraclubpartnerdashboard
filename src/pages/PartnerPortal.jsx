@@ -15,6 +15,7 @@ import { partnerApi, getPartnerToken, setPartnerToken } from '../lib/partnerApi.
 import Paged from '../components/ui/Pagination.jsx';
 import PortalTabBar from '../components/partners/PortalTabBar.jsx';
 import useStackLabels from '../lib/useStackLabels.js';
+import SetPassword from '../components/partners/SetPassword.jsx';
 
 /**
  * The partner portal — the only thing a partner can open.
@@ -904,6 +905,9 @@ export default function PartnerPortal() {
             ['Approval', p?.approval],
           ]}
         />
+        <div className="mt-5">
+          <SetPassword phone={p?.phone} />
+        </div>
         <button type="button" onClick={signOut} className="btn-line mt-5">
           <LogOut size={15} /> Sign out
         </button>
@@ -973,6 +977,11 @@ export default function PartnerPortal() {
           </p>
         </div>
       )}
+
+      {/* Before going live there is no Profile, so the password lives here. */}
+      <div className="card p-4 sm:p-5">
+        <SetPassword phone={me?.phone} />
+      </div>
     </div>
   );
 
