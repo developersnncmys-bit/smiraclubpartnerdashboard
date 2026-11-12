@@ -172,14 +172,16 @@ function Faqs({ open, onToggle }) {
 /** Three ways to reach a person, stacked so nothing is cut off. */
 function Contact() {
   const ways = [
-    { icon: Phone, label: 'Call', value: '+91 98200 11223', href: 'tel:+919820011223' },
-    { icon: MessageCircle, label: 'WhatsApp', value: 'Message the desk', href: 'https://wa.me/919820011223' },
-    { icon: Mail, label: 'Email', value: 'partners@smiraclub.com', href: 'mailto:partners@smiraclub.com' },
+    { icon: Phone, label: 'Call', value: '+91 98198 12456', href: 'tel:+919819812456' },
+    { icon: Phone, label: 'Call', value: '+91 98337 33977', href: 'tel:+919833733977' },
+    { icon: Phone, label: 'Call', value: '+91 98337 33477', href: 'tel:+919833733477' },
+    { icon: MessageCircle, label: 'WhatsApp', value: 'Message the desk', href: 'https://wa.me/919819812456' },
+    { icon: Mail, label: 'Email', value: 'support@smira.club', href: 'mailto:support@smira.club' },
   ];
   return (
     <ul className="space-y-2">
       {ways.map((c) => (
-        <li key={c.label}>
+        <li key={c.href}>
           <a
             href={c.href}
             target={c.href.startsWith('http') ? '_blank' : undefined}
