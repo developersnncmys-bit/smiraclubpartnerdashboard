@@ -138,6 +138,9 @@ export const partnerApi = {
   createFlashOffer: (body) => request('/flash-offers', { method: 'POST', body }),
   stopFlashOffer: (id) => request(`/flash-offers/${id}/stop`, { method: 'POST' }),
   setAvailability: (body) => request('/availability', { method: 'PATCH', body }),
+  /** Their properties in full, and a change to one: details, rooms, rates. */
+  stock: () => request('/stock'),
+  updateStock: (id, body) => request(`/stock/${id}`, { method: 'PATCH', body }),
   /** A whole day at once: { date: 'YYYY-MM-DD', action: block | unblock | black | unblack, reason }. */
   setDay: (body) => request('/availability/day', { method: 'PATCH', body }),
 };

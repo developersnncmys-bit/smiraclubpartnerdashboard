@@ -9,6 +9,7 @@ import {
 import Brand from '../components/ui/Brand.jsx';
 import ListingWizard from '../components/partners/ListingWizard.jsx';
 import FlashOffers, { portalFlash } from '../components/partners/FlashOffers.jsx';
+import StockEditor from '../components/partners/StockEditor.jsx';
 import Badge from '../components/ui/Badge.jsx';
 import { inr, shortInr } from '../data/mockData.js';
 import { partnerApi, getPartnerToken, setPartnerToken } from '../lib/partnerApi.js';
@@ -467,18 +468,23 @@ export default function PartnerPortal() {
     ),
 
     property: (
-      <Panel title="My property" note="What members see about you">
-        <Facts
-          rows={[
-            ['Name', p?.name],
-            ['Partner code', p?.code],
-            ['Category', p?.category],
-            ['Location', p?.location],
-            ['Rooms or units', p?.rooms],
-            ['Rating', p?.rating ? `${p.rating} ★` : 'Not rated yet'],
-          ]}
-        />
-      </Panel>
+      <>
+        <Panel title="My property" note="What members see about you">
+          <Facts
+            rows={[
+              ['Name', p?.name],
+              ['Partner code', p?.code],
+              ['Category', p?.category],
+              ['Location', p?.location],
+              ['Rooms or units', p?.rooms],
+              ['Rating', p?.rating ? `${p.rating} ★` : 'Not rated yet'],
+            ]}
+          />
+        </Panel>
+        <Panel title="Edit your property" note="Description, address, times and amenities — live as soon as you save">
+          <StockEditor mode="property" onChanged={load} />
+        </Panel>
+      </>
     ),
 
     rooms: (
@@ -514,6 +520,12 @@ export default function PartnerPortal() {
         ) : (
           <Empty>No rooms released yet. The desk adds these when your rate plan is signed.</Empty>
         )}
+        {data?.inventory?.length > 0 && (
+          <div className="mt-4">
+            <p className="mb-2 text-sm font-bold text-ink-900">Change your rooms</p>
+            <StockEditor mode="rooms" onChanged={load} />
+          </div>
+        )}
       </Panel>
     ),
 
@@ -528,9 +540,13 @@ export default function PartnerPortal() {
             ]}
           />
           <p className="mt-4 text-xs text-ink-500">
-            To change your contracted rate or your commission, call the partnerships desk on{' '}
-            {DESK_PHONE}. A flash offer below is yours to run without asking.
+            Your room rates are yours to change below. The commission and the contract stay with the
+            partnerships desk ({DESK_PHONE}).
           </p>
+        </Panel>
+
+        <Panel title="Your rates" note="Base rate and each room type's rates — live as soon as you save">
+          <StockEditor mode="rates" onChanged={load} />
         </Panel>
 
         {/*
@@ -554,7 +570,7 @@ export default function PartnerPortal() {
       <>
         <Panel
           title="Availability calendar"
-          note="What you charge each day, and who is staying"
+          note="Tap a day to change rooms open and the rate for that day, or block it"
           action={
             <span className="flex items-center gap-2">
               <button type="button" className="btn-line btn-sm" onClick={() => shiftMonth(-1)} aria-label="Previous month">
